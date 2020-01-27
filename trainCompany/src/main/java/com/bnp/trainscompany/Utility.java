@@ -20,59 +20,66 @@ import com.bnp.trainscompany.metier.Zones;
 
 public class Utility {
 
-public static void Running (String INPUT_FILE,String OUTPUT_FILE){
-      	
-    	Zones.initRules();
-    	
-        Taps taps = Utils.fromJsonFile(INPUT_FILE);
-      
-        List<Integer> CustomersIds = taps.getTaps().stream()
-                .filter( distinctByKey(p -> p.getCustomerId()) )
-                .map(p -> p.getCustomerId())
-                .collect( Collectors.toList() );
-        Summaries summaries = new Summaries();  
-        summaries.setCustomerSummaries(new ArrayList<>());
+	public static void Running(String INPUT_FILE, String OUTPUT_FILE) {
 
-        for (Integer id: CustomersIds) {
-            CustomerSummaries customerSummaries = new CustomerSummaries();
-            customerSummaries.setCustomerId(id);
-            customerSummaries.setTrips(new ArrayList<>());
-            List<Tap> tapsCustomer = taps.getTaps().stream()
-                    .filter( tap -> tap.getCustomerId() == id )
-                    .sorted(Comparator.comparingLong(Tap::getUnixTimestamp))
-                    .collect( Collectors.toList() );
+		Zones.initRules();
 
-            Long totalPrice = 0L;
-            for (int i = 0; i < tapsCustomer.size(); i++) {
-            	
-                Trip trip = new Trip();
-                trip.setStartedJourneyAt(tapsCustomer.get(i).getUnixTimestamp());
-                trip.setStationStart(tapsCustomer.get(i).getStation());
-                trip.setStationEnd(tapsCustomer.get(i+1).getStation());
+		Taps taps = Utils.fromJsonFile(INPUT_FILE);
 
-                ZoneToFrom zoneToFrom = Zones.getZoneWithCost(trip.getStationStart(),trip.getStationEnd());
+		Summaries summaries = setCustomerSummaries(taps);
 
-                trip.setZoneFrom(zoneToFrom.getZoneFrom());
-                trip.setZoneTo(zoneToFrom.getZoneTo());
-                trip.setCostInCents(zoneToFrom.getPrice());
-                customerSummaries.getTrips().add(trip);
-                totalPrice+= zoneToFrom.getPrice();
-                i++;
-            }
-            customerSummaries.setTotalCostInCents(totalPrice);
-            summaries.getCustomerSummaries().add(customerSummaries);
+		Utils.toJsonFile(OUTPUT_FILE, summaries);
+	}
 
-        }
-        Utils.toJsonFile(OUTPUT_FILE , summaries);
-    }
-    
-   	//  distinct by object property directly
-    public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor)
-    {
-        Map<Object, Boolean> map = new ConcurrentHashMap<>();
-        return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
-    }
 
- 
+	public static Summaries setCustomerSummaries(Taps taps) {
+
+		List<Integer> CustomersIds = taps.getTaps().stream().filter(distinctByKey(p -> p.getCustomerId()))
+				.map(p -> p.getCustomerId()).collect(Collectors.toList());
+		
+		Summaries summaries = new Summaries();
+		summaries.setCustomerSummaries(new ArrayList<>());
+
+		for (Integer id : CustomersIds) {
+			CustomerSummaries customerSummaries = new CustomerSummaries();
+			customerSummaries.setCustomerId(id);
+			customerSummaries.setTrips(new ArrayList<>());
+			List<Tap> tapsCustomer = taps.getTaps()
+					.stream().filter(tap -> tap.getCustomerId() == id)
+					.sorted(Comparator.comparingLong(Tap::getUnixTimestamp))
+					.collect(Collectors.toList());
+
+			Long totalPrice = 0L;
+			for (int i = 0; i < tapsCustomer.size(); i++) {
+
+				Trip trip = new Trip();
+				trip.setStartedJourneyAt(tapsCustomer.get(i).getUnixTimestamp());
+				trip.setStationStart(tapsCustomer.get(i).getStation());
+				trip.setStationEnd(tapsCustomer.get(i + 1).getStation());
+
+				ZoneToFrom zoneToFrom = Zones.getZoneWithCost(trip.getStationStart(), trip.getStationEnd());
+
+				trip.setZoneFrom(zoneToFrom.getZoneFrom());
+				trip.setZoneTo(zoneToFrom.getZoneTo());
+				trip.setCostInCents(zoneToFrom.getCost());
+				customerSummaries.getTrips().add(trip);
+				totalPrice += zoneToFrom.getCost();
+				i++;
+			}
+			customerSummaries.setTotalCostInCents(totalPrice);
+			summaries.getCustomerSummaries().add(customerSummaries);
+
+		}
+		return summaries;
+	}
+	
+	
+	
+	// distinct by object property directly
+	public static <T> Predicate<T> distinctByKey(Function<? super T, Object> keyExtractor) {
+		Map<Object, Boolean> map = new ConcurrentHashMap<>();
+		return t -> map.putIfAbsent(keyExtractor.apply(t), Boolean.TRUE) == null;
+	}
+
 
 }

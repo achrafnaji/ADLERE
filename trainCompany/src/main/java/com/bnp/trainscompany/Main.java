@@ -7,6 +7,7 @@ public class Main {
 
 
     public static void main(String[] args) {
+    	
     	Utility.Running(INPUT_FILE, OUTPUT_FILE);
     }
    

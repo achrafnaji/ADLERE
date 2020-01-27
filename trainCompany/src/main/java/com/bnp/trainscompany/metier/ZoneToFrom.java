@@ -4,7 +4,7 @@ public class ZoneToFrom {
 
     int zoneFrom;
     int zoneTo;
-    Long price;
+    Long cost;
 
     public int getZoneFrom() {
         return zoneFrom;
@@ -22,11 +22,11 @@ public class ZoneToFrom {
         this.zoneTo = zoneTo;
     }
 
-    public Long getPrice() {
-        return price;
+    public Long getCost() {
+        return cost;
     }
 
-    public void setPrice(Long price) {
-        this.price = price;
+    public void setCost(Long cost) {
+        this.cost = cost;
     }
 }
